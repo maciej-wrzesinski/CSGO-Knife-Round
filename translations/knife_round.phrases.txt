@@ -1,0 +1,50 @@
+"Phrases"
+{
+	"Knife_Start"
+	{
+		"en"		"Knife round starts!"
+		"pl"		"Zaczyna się runda nożowa!"
+	}
+	
+	"Knife_End"
+	{
+		"en"		"Knife round has ended!"
+		"pl"		"Runda nożowa się skończyła!"
+	}
+	
+	"Win_None"
+	{
+		"en"		"Non of the teams won the knife round!"
+		"pl"		"Żadna z drużyn nie wygrała rundy nożowej!"
+	}
+	
+	"Voting_Start"
+	{
+		"en"		"Voting for starting team incoming!"
+		"pl"		"Trwa głosowanie na drużynę startową!"
+	}
+	
+	"Menu_Title"
+	{
+		"en"		"In what team do you want to start the match?"
+		"pl"		"W jakiej drużynie chcesz zaczynać mecz?"
+	}
+	
+	"An_Error"
+	{
+		"en"		"Whoops! Something went wrong, nothing was chosen so teams will stay the same"
+		"pl"		"Ups! Coś poszło nie tak, nikt nie został wybrany więc drużyny pozostaną te same"
+	}
+	
+	"Winning_Swap"
+	{
+		"en"		"Winning team decided to swap teams!"
+		"pl"		"Zwycięska drużyna zamienia się miejscami!"
+	}
+	
+	"Winning_Stay"
+	{
+		"en"		"Winning team decided to stay in current team!"
+		"pl"		"Zwycięska drużyna nie zmienia miejsc!"
+	}
+}
