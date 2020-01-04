@@ -190,7 +190,7 @@ stock void ShowPlayersVoteMenu()
 	g_iClientsNumWinners = 0;
 	for (int i = 1;i <= MAX_PLAYERS;i++)
 	
-		if (IsClientValid(i) && !IsClientSourceTV(i))
+		if (IsClientValid(i))
 		
 			if (GetClientTeam(i) == g_iWonTeam)
 			{
@@ -239,7 +239,7 @@ public Action EndTheVote(Handle hTimer)
 	int iTTNum = 0;
 	for (int i = 1; i <= MAX_PLAYERS; i++)
 	
-		if (IsClientValid(i) && !IsClientSourceTV(i))
+		if (IsClientValid(i))
 		
 			switch(g_iClientsWinnersDecision[i])
 			{
@@ -385,7 +385,7 @@ stock bool SafeRemoveWeapon(int client, int weapon)
 
 stock bool IsClientValid(int client)
 {
-	return (client > 0 && client <= MAX_PLAYERS && IsClientInGame(client));
+	return (client > 0 && client <= MAX_PLAYERS && IsClientInGame(client) && !IsClientSourceTV(i));
 }
 
 stock int GetClientCountInTeams()
