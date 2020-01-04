@@ -125,7 +125,7 @@ public Action RoundStart(Handle event, const char[] name, bool dontBroadcast)
 	if (g_iRoundNumber == 1)
 		PrepareForKnifeRound();
 	
-	else if(g_iRoundNumber == 2 && g_bKnifeRoundEnded == false) //round after warmup = knife round
+	else if(IsFirstRound())
 	{
 		
 		
@@ -154,7 +154,7 @@ public Action RoundEnd(Handle event, const char[] name, bool dontBroadcast)
 	if (g_bKnifeRoundEnded)
 		return;
 	
-	if (g_iRoundNumber == 2) //end of knife round
+	if (HasKnifeRoundJustEnded())
 	{
 		
 		
@@ -176,18 +176,18 @@ public Action RoundEnd(Handle event, const char[] name, bool dontBroadcast)
 			RestartLastTime();
 		}
 		else
-			MakeVote();
+			ShowPlayersVoteMenu();
 	}
 }
 
-stock void MakeVote()
+stock void ShowPlayersVoteMenu()
 {
 	char cTempTextHUD[256];
 	Format(cTempTextHUD, sizeof(cTempTextHUD), "%t", "Voting_Start");
 	SendTextToAll(cTempTextHUD);
 	
 	iClientsNumWinners = 0;
-	for (int i = 1;i <= MAX_PLAYERS;i++) //counting winning guys to show them a menu
+	for (int i = 1;i <= MAX_PLAYERS;i++)
 	
 		if (IsClientValid(i) && !IsClientSourceTV(i))
 		
@@ -236,7 +236,7 @@ public Action EndTheVote(Handle hTimer)
 {
 	int iCTNum = 0;
 	int iTTNum = 0;
-	for (int i = 1; i <= MAX_PLAYERS; i++) //counting winning guys to show them a menu
+	for (int i = 1; i <= MAX_PLAYERS; i++)
 	
 		if (IsClientValid(i) && !IsClientSourceTV(i))
 		
@@ -428,4 +428,14 @@ public Action FixHUDmsg(Handle hTimer, Handle hData)
 			SetHudTextParams(-1.0, -1.0, 4.0, 255, 255, 255, 200, 0, 0.0, 0.0, 0.0);
 			ShowSyncHudText(i, g_hHUD, cTempText);
 		}
+}
+
+public bool isFirstRound()
+{
+	return (g_iRoundNumber == 2 && g_bKnifeRoundEnded == false);
+}
+
+public bool HasKnifeRoundJustEnded() 
+{
+	return g_iRoundNumber == 2;
 }
