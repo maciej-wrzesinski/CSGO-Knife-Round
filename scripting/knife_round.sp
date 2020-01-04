@@ -186,7 +186,7 @@ stock void ShowPlayersVoteMenu()
 	SendTextToAll(cTempTextHUD);
 	
 	g_iClientsNumWinners = 0;
-	for (int i = 1;i <= MaxClients;i++)
+	for (int i = 1; i <= MaxClients; i++)
 	
 		if (IsClientValid(i))
 		
@@ -194,33 +194,32 @@ stock void ShowPlayersVoteMenu()
 			{
 				g_iClientsWinnersID[g_iClientsNumWinners] = i;
 				++g_iClientsNumWinners;
+				
+				DisplayVoteMenu(i);
 			}
 	
-	
+	CreateTimer(g_fCvarVoteTime, EndVoteMenu);
+}
+
+stock void DisplayVoteMenu(int client)
+{
 	Handle hMenu = CreateMenu(ShowVotingMenuHandle);
 	char cTempBuffer[128];
 	Format(cTempBuffer, sizeof(cTempBuffer), "%t", "Menu_Title");
 	SetMenuTitle(hMenu, cTempBuffer);
-	
+
 	AddMenuItem(hMenu, "CT", "CT");
 	AddMenuItem(hMenu, "TT", "TT");
-	
+
 	SetMenuExitButton(hMenu, false);
 	SetMenuExitBackButton(hMenu, false);
-	
-	for(int i = 0; i < g_iClientsNumWinners; i++)
-		DisplayMenu(hMenu, g_iClientsWinnersID[i], RoundFloat(g_fCvarVoteTime));
-	CreateTimer(g_fCvarVoteTime, EndTheVote);
+
+	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
 }
 
 public int ShowVotingMenuHandle(Handle hMenu, MenuAction action, int client, int choose)
 {
-	if (action == MenuAction_End)
-	{
-		if (hMenu == INVALID_HANDLE)
-			CloseHandle(hMenu);
-	}
-	else if (action == MenuAction_Select)
+	if (action == MenuAction_Select)
 	{
 		choose += 2;
 		if (choose == TEAM_CT)
@@ -231,7 +230,7 @@ public int ShowVotingMenuHandle(Handle hMenu, MenuAction action, int client, int
 	}
 } 
 
-public Action EndTheVote(Handle hTimer)
+public Action EndVoteMenu(Handle hTimer)
 {
 	int iCTNum = 0;
 	int iTTNum = 0;
