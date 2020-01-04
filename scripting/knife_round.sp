@@ -10,8 +10,6 @@
 #pragma semicolon				1
 #pragma newdecls				required
 
-#define MaxClients				64
-
 #define TEAM_CT					2
 #define TEAM_TT					3
 
