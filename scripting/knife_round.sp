@@ -10,7 +10,7 @@
 #pragma semicolon				1
 #pragma newdecls				required
 
-#define MAX_PLAYERS				64
+#define MaxClients				64
 
 #define TEAM_CT					2
 #define TEAM_TT					3
@@ -30,8 +30,8 @@ int g_iRoundNumber = 0;
 int g_iWonTeam = 0;
 
 int g_iClientsNumWinners = 0;
-int g_iClientsWinnersID[MAX_PLAYERS + 1];
-int g_iClientsWinnersDecision[MAX_PLAYERS + 1];
+int g_iClientsWinnersID[MaxClients + 1];
+int g_iClientsWinnersDecision[MaxClients + 1];
 
 ConVar cvInfo;
 ConVar cvTime;
@@ -188,7 +188,7 @@ stock void ShowPlayersVoteMenu()
 	SendTextToAll(cTempTextHUD);
 	
 	g_iClientsNumWinners = 0;
-	for (int i = 1;i <= MAX_PLAYERS;i++)
+	for (int i = 1;i <= MaxClients;i++)
 	
 		if (IsClientValid(i))
 		
@@ -219,7 +219,7 @@ public int ShowVotingMenuHandle(Handle hMenu, MenuAction action, int client, int
 {
 	if (action == MenuAction_End)
 	{
-		if (IsValidHandle(hMenu))
+		if (hMenu == INVALID_HANDLE)
 			CloseHandle(hMenu);
 	}
 	else if (action == MenuAction_Select)
@@ -237,7 +237,7 @@ public Action EndTheVote(Handle hTimer)
 {
 	int iCTNum = 0;
 	int iTTNum = 0;
-	for (int i = 1; i <= MAX_PLAYERS; i++)
+	for (int i = 1; i <= MaxClients; i++)
 	
 		if (IsClientValid(i))
 		
@@ -332,7 +332,7 @@ public Action TimerStripWeapons(Handle timer)
 
 stock void StripAllPlayersWeapons()
 {
-	for (int i = 1; i <= MAX_PLAYERS; i++)
+	for (int i = 1; i <= MaxClients; i++)
 		StripOnePlayerWeapons(i);
 }
 
@@ -385,13 +385,13 @@ stock bool SafeRemoveWeapon(int client, int weapon)
 
 stock bool IsClientValid(int client)
 {
-	return (client > 0 && client <= MAX_PLAYERS && IsClientInGame(client) && !IsClientSourceTV(i));
+	return (client > 0 && client <= MaxClients && IsClientInGame(client) && !IsClientSourceTV(client));
 }
 
 stock int GetClientCountInTeams()
 {
 	int iTempSum = 0;
-	for (int i = 1; i <= MAX_PLAYERS; i++)
+	for (int i = 1; i <= MaxClients; i++)
 		if (IsClientValid(i) && IsClientAuthorized(i) && !IsClientSourceTV(i) && (GetClientTeam(i) == TEAM_CT || GetClientTeam(i) == TEAM_TT))
 			++iTempSum;
 	
@@ -418,7 +418,7 @@ public Action FixHUDmsg(Handle hTimer, Handle hData)
 	char cTempText[256];
 	ReadPackString(hData, cTempText, sizeof(cTempText));
 	
-	for (int i = 1; i <= MAX_PLAYERS; i++)
+	for (int i = 1; i <= MaxClients; i++)
 		if (IsClientValid(i))
 		{
 			SetHudTextParams(-1.0, -1.0, 4.0, 255, 255, 255, 200, 0, 0.0, 0.0, 0.0);
