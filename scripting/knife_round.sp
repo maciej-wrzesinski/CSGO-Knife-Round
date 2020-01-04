@@ -1,3 +1,5 @@
+// thanks for SafeRemoveWeapon stock https://forums.alliedmods.net/archive/index.php/t-288614.html
+
 //#define UNLOAD_KENTO_RANKME
 
 #include <sourcemod>
@@ -352,11 +354,6 @@ stock void StripOnePlayerWeapons(int client)
 		ClientCommand(client, "slot3");
 	}
 }
-
-/*
-	https://forums.alliedmods.net/archive/index.php/t-288614.html
-	thanks for SafeRemoveWeapon stock
-*/
 
 stock bool SafeRemoveWeapon(int client, int weapon)
 {
