@@ -29,9 +29,9 @@ bool g_bKnifeRoundEnded = false;
 int g_iRoundNumber = 0;
 int g_iWonTeam = 0;
 
-int iClientsNumWinners = 0;
-int iClientsWinnersID[MAX_PLAYERS + 1];
-int iClientsWinnersDecision[MAX_PLAYERS + 1];
+int g_iClientsNumWinners = 0;
+int g_iClientsWinnersID[MAX_PLAYERS + 1];
+int g_iClientsWinnersDecision[MAX_PLAYERS + 1];
 
 ConVar cvInfo;
 ConVar cvTime;
@@ -69,8 +69,7 @@ public void OnPluginStart()
 	cvTalkDead = FindConVar("sv_talk_enemy_dead");
 	cvTalkLiving = FindConVar("sv_talk_enemy_living");
 	
-	g_bKnifeRoundEnded = false;
-	g_iRoundNumber = 0;
+	ResetGlobalVariables();
 	
 	g_hHUD = CreateHudSynchronizer();
 	
@@ -93,41 +92,40 @@ public void OnConfigsExecuted()
 
 public void OnMapStart()
 {
-	g_bKnifeRoundEnded = false;
-	g_iRoundNumber = 0;
+	ResetGlobalVariables();
 }
 
 public void OnMapEnd()
 {
-	g_bKnifeRoundEnded = false;
-	g_iRoundNumber = 0;
+	ResetGlobalVariables();
 }
 
 public Action PlayerSpawn(Handle event, const char[] name, bool dontBroadcast)
 {
-	if (g_iRoundNumber == 2 && g_bKnifeRoundEnded == false)
+	if (InKnifeRound())
 		StripOnePlayerWeapons(GetClientOfUserId(GetEventInt(event, "userid")));
 }
 
 public Action RoundStart(Handle event, const char[] name, bool dontBroadcast)
 {
-	if (GetClientCountInTeams() < 1 || GameRules_GetProp("m_bWarmupPeriod"))
+	if (KnifeRoundPlayedAlready())
 	{
-		g_iRoundNumber = 0;
-		g_bKnifeRoundEnded = false;
 		return;
 	}
 	
-	if (g_bKnifeRoundEnded)
+	if (InvalidConditionsForKnifeRound()) 
+	{
+		ResetGlobalVariables();
 		return;
+	}
 	
+	if (ShouldKnifeRoundStart())
+	{
+		RestartRoundForKnifeRound();
+		return;
+	}
 	
-	g_iRoundNumber++;
-	
-	if (g_iRoundNumber == 1)
-		PrepareForKnifeRound();
-	
-	else if(IsFirstRound())
+	if(InKnifeRound())
 	{
 		
 		
@@ -146,17 +144,18 @@ public Action RoundStart(Handle event, const char[] name, bool dontBroadcast)
 
 public Action RoundEnd(Handle event, const char[] name, bool dontBroadcast)
 {
-	if (GetClientCountInTeams() < 1 || GameRules_GetProp("m_bWarmupPeriod"))
+	if (KnifeRoundPlayedAlready())
 	{
-		g_iRoundNumber = 0;
-		g_bKnifeRoundEnded = false;
 		return;
 	}
 	
-	if (g_bKnifeRoundEnded)
+	if (InvalidConditionsForKnifeRound())
+	{
+		ResetGlobalVariables();
 		return;
+	}
 	
-	if (HasKnifeRoundJustEnded())
+	if (KnifeRoundJustEnded())
 	{
 		
 		
@@ -166,7 +165,7 @@ public Action RoundEnd(Handle event, const char[] name, bool dontBroadcast)
 		
 		
 		g_bKnifeRoundEnded = true;
-		AfterKnifeRound();
+		RestoreCvarsAfterKnifeRound();
 		
 		g_iWonTeam = GetEventInt(event, "winner");
 		if (g_iWonTeam != TEAM_CT && g_iWonTeam != TEAM_TT)
@@ -188,15 +187,15 @@ stock void ShowPlayersVoteMenu()
 	Format(cTempTextHUD, sizeof(cTempTextHUD), "%t", "Voting_Start");
 	SendTextToAll(cTempTextHUD);
 	
-	iClientsNumWinners = 0;
+	g_iClientsNumWinners = 0;
 	for (int i = 1;i <= MAX_PLAYERS;i++)
 	
 		if (IsClientValid(i) && !IsClientSourceTV(i))
 		
 			if (GetClientTeam(i) == g_iWonTeam)
 			{
-				iClientsWinnersID[iClientsNumWinners] = i;
-				++iClientsNumWinners;
+				g_iClientsWinnersID[g_iClientsNumWinners] = i;
+				++g_iClientsNumWinners;
 			}
 	
 	
@@ -211,8 +210,8 @@ stock void ShowPlayersVoteMenu()
 	SetMenuExitButton(hMenu, false);
 	SetMenuExitBackButton(hMenu, false);
 	
-	for(int i = 0; i < iClientsNumWinners; i++)
-		DisplayMenu(hMenu, iClientsWinnersID[i], RoundFloat(g_fCvarVoteTime));
+	for(int i = 0; i < g_iClientsNumWinners; i++)
+		DisplayMenu(hMenu, g_iClientsWinnersID[i], RoundFloat(g_fCvarVoteTime));
 	CreateTimer(g_fCvarVoteTime, EndTheVote);
 }
 
@@ -227,10 +226,10 @@ public int ShowVotingMenuHandle(Handle hMenu, MenuAction action, int client, int
 	{
 		choose += 2;
 		if (choose == TEAM_CT)
-			iClientsWinnersDecision[client] = TEAM_CT;
+			g_iClientsWinnersDecision[client] = TEAM_CT;
 			
 		else if (choose == TEAM_TT)
-			iClientsWinnersDecision[client] = TEAM_TT;
+			g_iClientsWinnersDecision[client] = TEAM_TT;
 	}
 } 
 
@@ -242,7 +241,7 @@ public Action EndTheVote(Handle hTimer)
 	
 		if (IsClientValid(i) && !IsClientSourceTV(i))
 		
-			switch(iClientsWinnersDecision[i])
+			switch(g_iClientsWinnersDecision[i])
 			{
 				case TEAM_CT: { ++iCTNum; }
 				case TEAM_TT: { ++iTTNum; }
@@ -281,7 +280,7 @@ public Action EndTheVote(Handle hTimer)
 	}
 }
 
-stock void PrepareForKnifeRound()
+stock void RestartRoundForKnifeRound()
 {
 	if (g_iCvarAllowAllTalk)
 	{
@@ -296,7 +295,7 @@ stock void PrepareForKnifeRound()
 	ServerCommand("mp_restartgame 1");
 }
 
-stock void AfterKnifeRound()
+stock void RestoreCvarsAfterKnifeRound()
 {
 	if (g_iCvarAllowAllTalk)
 	{
@@ -427,12 +426,33 @@ public Action FixHUDmsg(Handle hTimer, Handle hData)
 		}
 }
 
-public bool isFirstRound()
+stock bool InKnifeRound()
 {
 	return (g_iRoundNumber == 2 && g_bKnifeRoundEnded == false);
 }
 
-public bool HasKnifeRoundJustEnded() 
+stock bool KnifeRoundJustEnded() 
 {
 	return g_iRoundNumber == 2;
+}
+
+stock void ResetGlobalVariables()
+{
+	g_bKnifeRoundEnded = false;
+	g_iRoundNumber = 0;
+}
+
+stock bool ShouldKnifeRoundStart()
+{
+	return (++g_iRoundNumber == 1);
+}
+
+stock bool InvalidConditionsForKnifeRound()
+{
+	return GetClientCountInTeams() < 1 || GameRules_GetProp("m_bWarmupPeriod");
+}
+
+stock bool KnifeRoundPlayedAlready()
+{
+	return g_bKnifeRoundEnded;
 }
