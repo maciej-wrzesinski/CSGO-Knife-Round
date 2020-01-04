@@ -28,8 +28,8 @@ int g_iRoundNumber = 0;
 int g_iWonTeam = 0;
 
 int g_iClientsNumWinners = 0;
-int g_iClientsWinnersID[MaxClients + 1];
-int g_iClientsWinnersDecision[MaxClients + 1];
+int g_iClientsWinnersID[64 + 1];
+int g_iClientsWinnersDecision[64 + 1];
 
 ConVar cvInfo;
 ConVar cvTime;
