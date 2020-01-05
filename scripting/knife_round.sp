@@ -114,7 +114,7 @@ public Action RoundStart(Handle event, const char[] name, bool dontBroadcast)
 	
 	if (ShouldKnifeRoundStart())
 	{
-		RestartRoundForKnifeRound();
+		PrepareCvarsForKnifeRound();
 		return;
 	}
 	
@@ -174,8 +174,17 @@ public Action RoundEnd(Handle event, const char[] name, bool dontBroadcast)
 
 public int ShowVotingMenuHandle(Handle hMenu, MenuAction action, int client, int selected_team)
 {
-	if (action == MenuAction_Select)
-		g_iTeamVotes[GetTeamID(selected_team)]++;
+	switch(action)
+	{
+		case MenuAction_Select:
+		{
+			g_iTeamVotes[GetTeamID(selected_team)]++;
+		}
+		case MenuAction_End:
+		{
+			CloseHandle(hMenu);
+		}
+	}
 }
 
 public Action EndVoteMenu(Handle hTimer, Handle hData)
@@ -191,7 +200,7 @@ public Action EndVoteMenu(Handle hTimer, Handle hData)
 	{
 		SendMessageToAll("Winning_Swap");
 		
-		RestartSwapLastTime();
+		RestartLastTime(.swap = true);
 	}
 	else
 	{
@@ -253,7 +262,7 @@ stock void DisplayVoteMenu(int client)
 	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
 }
 
-stock void RestartRoundForKnifeRound()
+stock void PrepareCvarsForKnifeRound()
 {
 	if (g_iCvarAllowAllTalk)
 	{
@@ -280,22 +289,17 @@ stock void RestoreCvarsAfterKnifeRound()
 	ServerCommand("mp_pause_match");
 }
 
-stock void RestartLastTime()
+stock void RestartLastTime(bool swap = false)
 {
 	ServerCommand("mp_buytime %f", g_fCvarBuyTimeNormal);
 	ServerCommand("mp_buy_during_immunity %f", g_fCvarBuyTimeImmunity);
 	ServerCommand("mp_startmoney 800");
 	ServerCommand("mp_unpause_match");
-	ServerCommand("mp_restartgame 1");
-}
-
-stock void RestartSwapLastTime()
-{
-	ServerCommand("mp_buytime %f", g_fCvarBuyTimeNormal);
-	ServerCommand("mp_buy_during_immunity %f", g_fCvarBuyTimeImmunity);
-	ServerCommand("mp_startmoney 800");
-	ServerCommand("mp_unpause_match");
-	ServerCommand("mp_swapteams");
+	
+	if (swap)
+		ServerCommand("mp_swapteams");
+	else
+		ServerCommand("mp_restartgame 1");
 }
 
 stock void StripPlayerWeapons(int client)
