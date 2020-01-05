@@ -26,7 +26,7 @@ bool g_bKnifeRoundEnded = false;
 
 int g_iRoundNumber = 0;
 
-int g_iClientsWinnersDecision[64 + 1];
+int g_iTeamVotes[4];
 
 ConVar cvInfo;
 ConVar cvTime;
@@ -138,6 +138,12 @@ public Action RoundStart(Handle event, const char[] name, bool dontBroadcast)
 
 public Action RoundEnd(Handle event, const char[] name, bool dontBroadcast)
 {
+	//debug, to be deleted
+	LogError("--- debug ---");
+	LogError("winner %i", GetEventInt(event, "winner"));
+	LogError("teamid %i", GetEventInt(event, "teamid"));
+	LogError("winnerid %i", GetEventInt(event, "winnerid"));
+	
 	if (KnifeRoundPlayedAlready())
 	{
 		return;
@@ -163,6 +169,8 @@ public Action RoundEnd(Handle event, const char[] name, bool dontBroadcast)
 		
 		
 		int iWinningTeam = GetEventInt(event, "winner");
+		
+		
 		if (iWinningTeam != TEAM_CT && iWinningTeam != TEAM_TT)
 		{
 			SendMessageToAll("Win_None");
@@ -170,31 +178,14 @@ public Action RoundEnd(Handle event, const char[] name, bool dontBroadcast)
 			RestartLastTime();
 		}
 		else
-			ShowPlayersVoteMenu(iWinningTeam);
+			PrepareVoteMenu(iWinningTeam);
 	}
-}
-
-stock void ShowPlayersVoteMenu(int iWinningTeam)
-{
-	SendMessageToAll("Voting_Start");
-	
-	
-	for (int i = 1; i <= MaxClients; i++)
-		if (IsClientValid(i) && GetClientTeam(i) == iWinningTeam)
-			DisplayVoteMenu(i);
-	
-	
-	Handle hData = CreateDataPack();
-	WritePackCell(hData, iWinningTeam);
-	CreateTimer(g_fCvarVoteTime, EndVoteMenu, hData);
 }
 
 public int ShowVotingMenuHandle(Handle hMenu, MenuAction action, int client, int selected_team)
 {
 	if (action == MenuAction_Select)
-	{
-		g_iClientsWinnersDecision[client] = selected_team + 2;
-	}
+		g_iTeamVotes[GetTeamID(selected_team)]++;
 }
 
 public Action EndVoteMenu(Handle hTimer, Handle hData)
@@ -203,26 +194,7 @@ public Action EndVoteMenu(Handle hTimer, Handle hData)
 	int iWinningTeam = ReadPackCell(hData);
 	
 	
-	int iCTNum = 0;
-	int iTTNum = 0;
-	for (int i = 1; i <= MaxClients; i++)
-	
-		if (IsClientValid(i))
-		
-			switch(g_iClientsWinnersDecision[i])
-			{
-				case TEAM_CT: { ++iCTNum; }
-				case TEAM_TT: { ++iTTNum; }
-			}
-	
-	
-	int iWantedTeam = 0;
-	if (iCTNum >= iTTNum)
-		iWantedTeam = TEAM_CT;
-	else
-		iWantedTeam = TEAM_TT;
-	
-	iWinningTeam = iWinningTeam == TEAM_CT ? TEAM_TT : TEAM_CT;
+	int iWantedTeam = GetMostVotedTeam();
 	
 	
 	if (iWinningTeam != iWantedTeam)
@@ -260,12 +232,27 @@ public Action DisplayDelayedHUD(Handle hTimer, Handle hData)
 		}
 }
 
+stock void PrepareVoteMenu(int iWinningTeam)
+{
+	SendMessageToAll("Voting_Start");
+	
+	
+	for (int i = 1; i <= MaxClients; i++)
+		if (IsClientValid(i) && GetClientTeam(i) == iWinningTeam)
+			DisplayVoteMenu(i);
+	
+	
+	Handle hData = CreateDataPack();
+	WritePackCell(hData, iWinningTeam);
+	CreateTimer(g_fCvarVoteTime, EndVoteMenu, hData);
+}
+
 stock void DisplayVoteMenu(int client)
 {
 	Handle hMenu = CreateMenu(ShowVotingMenuHandle);
-	char cTempBuffer[128];
-	Format(cTempBuffer, sizeof(cTempBuffer), "%t", "Menu_Title");
-	SetMenuTitle(hMenu, cTempBuffer);
+	char cTitle[128];
+	Format(cTitle, sizeof(cTitle), "%t", "Menu_Title");
+	SetMenuTitle(hMenu, cTitle);
 
 	AddMenuItem(hMenu, "CT", "CT");
 	AddMenuItem(hMenu, "TT", "TT");
@@ -427,4 +414,14 @@ stock bool InvalidConditionsForKnifeRound()
 stock bool KnifeRoundPlayedAlready()
 {
 	return g_bKnifeRoundEnded;
+}
+
+stock int GetTeamID(int selected_team)
+{
+	return selected_team + 2;
+}
+
+stock int GetMostVotedTeam()
+{
+	return g_iTeamVotes[TEAM_CT] >= g_iTeamVotes[TEAM_TT] ? TEAM_CT : TEAM_TT;
 }
