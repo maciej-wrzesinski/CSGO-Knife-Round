@@ -1,7 +1,5 @@
 // thanks for SafeRemoveWeapon stock https://forums.alliedmods.net/archive/index.php/t-288614.html
 
-//#define UNLOAD_KENTO_RANKME
-
 #include <sourcemod>
 #include <sdktools>
 #include <cstrike>
@@ -9,9 +7,6 @@
 
 #pragma semicolon				1
 #pragma newdecls				required
-
-#define TEAM_CT					2
-#define TEAM_TT					3
 
 public Plugin myinfo =
 {
@@ -32,6 +27,7 @@ ConVar cvInfo;
 ConVar cvTime;
 ConVar cvVote;
 ConVar cvAllowAllTalk;
+ConVar cvUnload;
 ConVar cvBuyTimeNormal;
 ConVar cvBuyTimeImmunity;
 ConVar cvTalkDead;
@@ -41,6 +37,7 @@ int g_iCvarInfo;
 float g_fCvarRoundTime;
 float g_fCvarVoteTime;
 int g_iCvarAllowAllTalk;
+char g_cCvarUnloadPlugins[256];
 float g_fCvarBuyTimeNormal;
 float g_fCvarBuyTimeImmunity;
 int g_iCvarTalkDead;
@@ -58,6 +55,7 @@ public void OnPluginStart()
 	cvTime = CreateConVar("knifer_roundtime", "60.0", "How much time should knife round take? (0.5 to 60.0 minutes)", _, true, 0.5, true, 60.0);
 	cvVote = CreateConVar("knifer_votetime", "10.0", "How much time should vote take? (5 to 20 seconds)", _, true, 5.0, true, 20.0);
 	cvAllowAllTalk = CreateConVar("knifer_alltalk", "1", "Should there be alltalk enabled while knife round? (1 - enabled, 0 - disabled)", _, true, 0.0, true, 1.0);
+	cvUnload = CreateConVar("knifer_unload", "kento_rankme,temporary_plugin1,temporary_plugin2", "Unload these plugins while knife round is being played (separate plugins with commas)", _, false, _, false, _);
 	
 	cvBuyTimeNormal = FindConVar("mp_buytime");
 	cvBuyTimeImmunity = FindConVar("mp_buy_during_immunity");
@@ -78,6 +76,8 @@ public void OnConfigsExecuted()
 	g_fCvarRoundTime = GetConVarFloat(cvTime);
 	g_fCvarVoteTime = GetConVarFloat(cvVote);
 	g_iCvarAllowAllTalk = GetConVarInt(cvAllowAllTalk);
+	GetConVarString(cvUnload, g_cCvarUnloadPlugins, sizeof(g_cCvarUnloadPlugins));
+	
 	
 	g_fCvarBuyTimeNormal = GetConVarFloat(cvBuyTimeNormal);
 	g_fCvarBuyTimeImmunity = GetConVarFloat(cvBuyTimeImmunity);
@@ -122,11 +122,7 @@ public Action RoundStart(Handle event, const char[] name, bool dontBroadcast)
 	
 	if(InKnifeRound())
 	{
-		
-		
-#if defined UNLOAD_KENTO_RANKME
-		ServerCommand("sm plugins unload kento_rankme");
-#endif
+		PluginsOnKnifeRound("unload");
 		
 		
 		CreateTimer(0.5, StripAllPlayersWeapons);
@@ -157,11 +153,7 @@ public Action RoundEnd(Handle event, const char[] name, bool dontBroadcast)
 	
 	if (InKnifeRound())
 	{
-		
-		
-#if defined UNLOAD_KENTO_RANKME
-		ServerCommand("sm plugins load kento_rankme");
-#endif
+		PluginsOnKnifeRound("load");
 		
 		
 		g_bKnifeRoundEnded = true;
@@ -171,7 +163,7 @@ public Action RoundEnd(Handle event, const char[] name, bool dontBroadcast)
 		int iWinningTeam = GetEventInt(event, "winner");
 		
 		
-		if (iWinningTeam != TEAM_CT && iWinningTeam != TEAM_TT)
+		if (iWinningTeam != CS_TEAM_T && iWinningTeam != CS_TEAM_CT)
 		{
 			SendMessageToAll("Win_None");
 			
@@ -254,8 +246,8 @@ stock void DisplayVoteMenu(int client)
 	Format(cTitle, sizeof(cTitle), "%t", "Menu_Title");
 	SetMenuTitle(hMenu, cTitle);
 
-	AddMenuItem(hMenu, "CT", "CT");
 	AddMenuItem(hMenu, "TT", "TT");
+	AddMenuItem(hMenu, "CT", "CT");
 
 	SetMenuExitButton(hMenu, false);
 	SetMenuExitBackButton(hMenu, false);
@@ -364,7 +356,7 @@ stock int GetClientCountInTeams()
 {
 	int iTempSum = 0;
 	for (int i = 1; i <= MaxClients; i++)
-		if (IsClientValid(i) && IsClientAuthorized(i) && (GetClientTeam(i) == TEAM_CT || GetClientTeam(i) == TEAM_TT))
+		if (IsClientValid(i) && IsClientAuthorized(i) && (GetClientTeam(i) == CS_TEAM_T || GetClientTeam(i) == CS_TEAM_CT))
 			++iTempSum;
 	
 	return iTempSum;
@@ -423,5 +415,30 @@ stock int GetTeamID(int selected_team)
 
 stock int GetMostVotedTeam()
 {
-	return g_iTeamVotes[TEAM_CT] >= g_iTeamVotes[TEAM_TT] ? TEAM_CT : TEAM_TT;
+	return g_iTeamVotes[CS_TEAM_T] >= g_iTeamVotes[CS_TEAM_CT] ? CS_TEAM_T : CS_TEAM_CT;
+}
+
+stock void PluginsOnKnifeRound(char[] command)
+{
+	char cPlugins[256];
+	Format(cPlugins, sizeof(cPlugins), g_cCvarUnloadPlugins);
+	TrimString(cPlugins);
+	StripQuotes(cPlugins);
+	StrCat(cPlugins, sizeof(cPlugins), ",");
+	
+	while (StrContains(cPlugins, ",")) 
+	{
+		char cFoundPlugin[128];
+		SplitString(cPlugins, ",", cFoundPlugin, sizeof(cFoundPlugin));
+		
+		ServerCommand("sm plugins %s %s", command, cFoundPlugin);
+		
+		ReplaceStringEx(cPlugins, sizeof(cPlugins), cFoundPlugin, "");
+		ReplaceStringEx(cPlugins, sizeof(cPlugins), ",", "");
+		
+		//debug, to be deleted
+		LogError("--- debug ---");
+		LogError("sm plugins %s %s", command, cFoundPlugin);
+		LogError("plugins string after %s", cPlugins);
+	}
 }
