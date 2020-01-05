@@ -26,8 +26,6 @@ bool g_bKnifeRoundEnded = false;
 
 int g_iRoundNumber = 0;
 
-int g_iClientsNumWinners = 0;
-int g_iClientsWinnersID[64 + 1];
 int g_iClientsWinnersDecision[64 + 1];
 
 ConVar cvInfo;
@@ -39,14 +37,14 @@ ConVar cvBuyTimeImmunity;
 ConVar cvTalkDead;
 ConVar cvTalkLiving;
 
-int		g_iCvarInfo;
-float	g_fCvarRoundTime;
-float	g_fCvarVoteTime;
-int		g_iCvarAllowAllTalk;
-float	g_fCvarBuyTimeNormal;
-float	g_fCvarBuyTimeImmunity;
-int		g_iCvarTalkDead;
-int		g_iCvarTalkLiving;
+int g_iCvarInfo;
+float g_fCvarRoundTime;
+float g_fCvarVoteTime;
+int g_iCvarAllowAllTalk;
+float g_fCvarBuyTimeNormal;
+float g_fCvarBuyTimeImmunity;
+int g_iCvarTalkDead;
+int g_iCvarTalkLiving;
 
 Handle g_hHUD;
 
@@ -178,18 +176,12 @@ stock void ShowPlayersVoteMenu(int iWinningTeam)
 {
 	SendMessageToAll("Voting_Start");
 	
-	g_iClientsNumWinners = 0;
 	for (int i = 1; i <= MaxClients; i++)
 	
-		if (IsClientValid(i))
-		
-			if (GetClientTeam(i) == iWinningTeam)
-			{
-				g_iClientsWinnersID[g_iClientsNumWinners] = i;
-				++g_iClientsNumWinners;
-				
-				DisplayVoteMenu(i);
-			}
+		if (IsClientValid(i) && GetClientTeam(i) == iWinningTeam)
+		{
+			DisplayVoteMenu(i);
+		}
 	
 	
 	Handle hData = CreateDataPack();
