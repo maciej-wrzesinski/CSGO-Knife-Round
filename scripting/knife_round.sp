@@ -17,8 +17,6 @@ public Plugin myinfo =
 	url = "https://github.com/maciej-wrzesinski/"
 };
 
-bool g_bKnifeRoundEnded = false;
-
 int g_iRoundNumber = 0;
 
 int g_iTeamVotes[4];
@@ -156,7 +154,7 @@ public Action RoundEnd(Handle event, const char[] name, bool dontBroadcast)
 		PluginsOnKnifeRound("load");
 		
 		
-		g_bKnifeRoundEnded = true;
+		g_iRoundNumber++;
 		RestoreCvarsAfterKnifeRound();
 		
 		
@@ -304,13 +302,13 @@ stock void StripPlayerWeapons(int client)
 {
 	if (IsClientValid(client) && IsPlayerAlive(client))
 	{
-		int iTempWeapon = -1;
+		int weapon = -1;
 		for (int i = 0; i < 5; i++)
-			if ((iTempWeapon = GetPlayerWeaponSlot(client, i)) != -1)
-				if (IsValidEntity(iTempWeapon))
+			if ((weapon = GetPlayerWeaponSlot(client, i)) != -1)
+				if (IsValidEntity(weapon))
 				{
 					--i;
-					SafeRemoveWeapon(client, iTempWeapon);
+					SafeRemoveWeapon(client, weapon);
 				}
 		
 		GivePlayerItem(client, "weapon_knife");
@@ -326,18 +324,18 @@ stock bool SafeRemoveWeapon(int client, int weapon)
 	if (!HasEntProp(weapon, Prop_Send, "m_hOwnerEntity"))
 		return false;
 	
-	int iOwnerEntity = GetEntPropEnt(weapon, Prop_Send, "m_hOwnerEntity");
+	int owner_entity = GetEntPropEnt(weapon, Prop_Send, "m_hOwnerEntity");
 	
-	if (iOwnerEntity != client)
+	if (owner_entity != client)
 		SetEntPropEnt(weapon, Prop_Send, "m_hOwnerEntity", client);
 	
 	CS_DropWeapon(client, weapon, false);
 	
 	if (HasEntProp(weapon, Prop_Send, "m_hWeaponWorldModel"))
 	{
-		int iWorldModel = GetEntPropEnt(weapon, Prop_Send, "m_hWeaponWorldModel");
+		int world_entity = GetEntPropEnt(weapon, Prop_Send, "m_hWeaponWorldModel");
 		
-		if (IsValidEdict(iWorldModel) && IsValidEntity(iWorldModel) && !AcceptEntityInput(iWorldModel, "Kill"))
+		if (IsValidEdict(world_entity) && IsValidEntity(world_entity) && !AcceptEntityInput(world_entity, "Kill"))
 			return false;
 	}
 	
@@ -354,12 +352,12 @@ stock bool IsClientValid(int client)
 
 stock int GetClientCountInTeams()
 {
-	int iTempSum = 0;
+	int sum = 0;
 	for (int i = 1; i <= MaxClients; i++)
 		if (IsClientValid(i) && IsClientAuthorized(i) && (GetClientTeam(i) == CS_TEAM_T || GetClientTeam(i) == CS_TEAM_CT))
-			++iTempSum;
+			++sum;
 	
-	return iTempSum;
+	return sum;
 }
 
 stock void SendMessageToAll(char[] phrase)
@@ -382,15 +380,19 @@ stock void SendMessageToAll(char[] phrase)
 	}
 }
 
-stock bool InKnifeRound()
-{
-	return g_iRoundNumber == 2 && g_bKnifeRoundEnded == false;
-}
-
 stock void ResetGlobalVariables()
 {
-	g_bKnifeRoundEnded = false;
 	g_iRoundNumber = 0;
+}
+
+stock bool InKnifeRound()
+{
+	return g_iRoundNumber == 2;
+}
+
+stock bool KnifeRoundPlayedAlready()
+{
+	return g_iRoundNumber > 2;
 }
 
 stock bool ShouldKnifeRoundStart()
@@ -401,11 +403,6 @@ stock bool ShouldKnifeRoundStart()
 stock bool InvalidConditionsForKnifeRound()
 {
 	return GetClientCountInTeams() < 1 || GameRules_GetProp("m_bWarmupPeriod");
-}
-
-stock bool KnifeRoundPlayedAlready()
-{
-	return g_bKnifeRoundEnded;
 }
 
 stock int GetTeamID(int selected_team)
@@ -420,25 +417,25 @@ stock int GetMostVotedTeam()
 
 stock void PluginsOnKnifeRound(char[] command)
 {
-	char cPlugins[256];
-	Format(cPlugins, sizeof(cPlugins), g_cCvarUnloadPlugins);
-	TrimString(cPlugins);
-	StripQuotes(cPlugins);
-	StrCat(cPlugins, sizeof(cPlugins), ",");
+	char plugins[256];
+	Format(plugins, sizeof(plugins), g_cCvarUnloadPlugins);
+	TrimString(plugins);
+	StripQuotes(plugins);
+	StrCat(plugins, sizeof(plugins), ",");
 	
-	while (StrContains(cPlugins, ",")) 
+	while (StrContains(plugins, ",")) 
 	{
-		char cFoundPlugin[128];
-		SplitString(cPlugins, ",", cFoundPlugin, sizeof(cFoundPlugin));
+		char found_plugin[128];
+		SplitString(plugins, ",", found_plugin, sizeof(found_plugin));
 		
-		ServerCommand("sm plugins %s %s", command, cFoundPlugin);
+		ServerCommand("sm plugins %s %s", command, found_plugin);
 		
-		ReplaceStringEx(cPlugins, sizeof(cPlugins), cFoundPlugin, "");
-		ReplaceStringEx(cPlugins, sizeof(cPlugins), ",", "");
+		ReplaceStringEx(plugins, sizeof(plugins), found_plugin, "");
+		ReplaceStringEx(plugins, sizeof(plugins), ",", "");
 		
 		//debug, to be deleted
 		LogError("--- debug ---");
-		LogError("sm plugins %s %s", command, cFoundPlugin);
-		LogError("plugins string after %s", cPlugins);
+		LogError("sm plugins %s %s", command, found_plugin);
+		LogError("plugins string after %s", plugins);
 	}
 }
