@@ -131,6 +131,7 @@ public Action RoundStart(Handle event, const char[] name, bool dontBroadcast)
 		
 		CreateTimer(0.5, StripAllPlayersWeapons);
 		
+		
 		SendMessageToAll("Knife_Start");
 	}
 }
@@ -160,6 +161,7 @@ public Action RoundEnd(Handle event, const char[] name, bool dontBroadcast)
 		g_bKnifeRoundEnded = true;
 		RestoreCvarsAfterKnifeRound();
 		
+		
 		int iWinningTeam = GetEventInt(event, "winner");
 		if (iWinningTeam != TEAM_CT && iWinningTeam != TEAM_TT)
 		{
@@ -176,37 +178,30 @@ stock void ShowPlayersVoteMenu(int iWinningTeam)
 {
 	SendMessageToAll("Voting_Start");
 	
-	for (int i = 1; i <= MaxClients; i++)
 	
+	for (int i = 1; i <= MaxClients; i++)
 		if (IsClientValid(i) && GetClientTeam(i) == iWinningTeam)
-		{
 			DisplayVoteMenu(i);
-		}
 	
 	
 	Handle hData = CreateDataPack();
 	WritePackCell(hData, iWinningTeam);
-	
 	CreateTimer(g_fCvarVoteTime, EndVoteMenu, hData);
 }
 
-public int ShowVotingMenuHandle(Handle hMenu, MenuAction action, int client, int choose)
+public int ShowVotingMenuHandle(Handle hMenu, MenuAction action, int client, int selected_team)
 {
 	if (action == MenuAction_Select)
 	{
-		choose += 2;
-		if (choose == TEAM_CT)
-			g_iClientsWinnersDecision[client] = TEAM_CT;
-			
-		else if (choose == TEAM_TT)
-			g_iClientsWinnersDecision[client] = TEAM_TT;
+		g_iClientsWinnersDecision[client] = selected_team + 2;
 	}
-} 
+}
 
 public Action EndVoteMenu(Handle hTimer, Handle hData)
 {
 	ResetPack(hData);
 	int iWinningTeam = ReadPackCell(hData);
+	
 	
 	int iCTNum = 0;
 	int iTTNum = 0;
@@ -228,7 +223,6 @@ public Action EndVoteMenu(Handle hTimer, Handle hData)
 		iWantedTeam = TEAM_TT;
 	
 	iWinningTeam = iWinningTeam == TEAM_CT ? TEAM_TT : TEAM_CT;
-	
 	
 	
 	if (iWinningTeam != iWantedTeam)
@@ -404,7 +398,6 @@ stock void SendMessageToAll(char[] phrase)
 		{
 			Handle hData = CreateDataPack();
 			WritePackString(hData, text);
-			
 			CreateTimer(2.0, DisplayDelayedHUD, hData);
 		}
 	}
