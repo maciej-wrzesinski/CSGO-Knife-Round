@@ -164,7 +164,7 @@ public Action RoundEnd(Handle event, const char[] name, bool dontBroadcast)
 		g_bKnifeRoundEnded = true;
 		RestoreCvarsAfterKnifeRound();
 		
-		iWinningTeam = GetEventInt(event, "winner");
+		int iWinningTeam = GetEventInt(event, "winner");
 		if (iWinningTeam != TEAM_CT && iWinningTeam != TEAM_TT)
 		{
 			char cTempTextHUD[256];
