@@ -101,7 +101,7 @@ public void OnMapEnd()
 public Action PlayerSpawn(Handle event, const char[] name, bool dontBroadcast)
 {
 	if (InKnifeRound())
-		StripOnePlayerWeapons(GetClientOfUserId(GetEventInt(event, "userid")));
+		StripPlayerWeapons(GetClientOfUserId(GetEventInt(event, "userid")));
 }
 
 public Action RoundStart(Handle event, const char[] name, bool dontBroadcast)
@@ -153,7 +153,7 @@ public Action RoundEnd(Handle event, const char[] name, bool dontBroadcast)
 		return;
 	}
 	
-	if (KnifeRoundJustEnded())
+	if (InKnifeRound())
 	{
 		
 		
@@ -277,6 +277,26 @@ public Action EndVoteMenu(Handle hTimer)
 	}
 }
 
+public Action TimerStripWeapons(Handle timer)
+{
+	StripAllPlayersWeapons();
+}
+
+public Action FixHUDmsg(Handle hTimer, Handle hData)
+{
+	ResetPack(hData);
+	
+	char cTempText[256];
+	ReadPackString(hData, cTempText, sizeof(cTempText));
+	
+	for (int i = 1; i <= MaxClients; i++)
+		if (IsClientValid(i))
+		{
+			SetHudTextParams(-1.0, -1.0, 4.0, 255, 255, 255, 200, 0, 0.0, 0.0, 0.0);
+			ShowSyncHudText(i, g_hHUD, cTempText);
+		}
+}
+
 stock void RestartRoundForKnifeRound()
 {
 	if (g_iCvarAllowAllTalk)
@@ -322,18 +342,13 @@ stock void RestartSwapLastTime()
 	ServerCommand("mp_swapteams");
 }
 
-public Action TimerStripWeapons(Handle timer)
-{
-	StripAllPlayersWeapons();
-}
-
 stock void StripAllPlayersWeapons()
 {
 	for (int i = 1; i <= MaxClients; i++)
-		StripOnePlayerWeapons(i);
+		StripPlayerWeapons(i);
 }
 
-stock void StripOnePlayerWeapons(int client)
+stock void StripPlayerWeapons(int client)
 {
 	if (IsClientValid(client) && IsPlayerAlive(client))
 	{
@@ -389,7 +404,7 @@ stock int GetClientCountInTeams()
 {
 	int iTempSum = 0;
 	for (int i = 1; i <= MaxClients; i++)
-		if (IsClientValid(i) && IsClientAuthorized(i) && !IsClientSourceTV(i) && (GetClientTeam(i) == TEAM_CT || GetClientTeam(i) == TEAM_TT))
+		if (IsClientValid(i) && IsClientAuthorized(i) && (GetClientTeam(i) == TEAM_CT || GetClientTeam(i) == TEAM_TT))
 			++iTempSum;
 	
 	return iTempSum;
@@ -408,29 +423,9 @@ stock void SendTextToAll(char[] text)
 	}
 }
 
-public Action FixHUDmsg(Handle hTimer, Handle hData)
-{
-	ResetPack(hData);
-	
-	char cTempText[256];
-	ReadPackString(hData, cTempText, sizeof(cTempText));
-	
-	for (int i = 1; i <= MaxClients; i++)
-		if (IsClientValid(i))
-		{
-			SetHudTextParams(-1.0, -1.0, 4.0, 255, 255, 255, 200, 0, 0.0, 0.0, 0.0);
-			ShowSyncHudText(i, g_hHUD, cTempText);
-		}
-}
-
 stock bool InKnifeRound()
 {
-	return (g_iRoundNumber == 2 && g_bKnifeRoundEnded == false);
-}
-
-stock bool KnifeRoundJustEnded() 
-{
-	return g_iRoundNumber == 2;
+	return g_iRoundNumber == 2 && g_bKnifeRoundEnded == false;
 }
 
 stock void ResetGlobalVariables()
