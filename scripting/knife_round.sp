@@ -133,9 +133,7 @@ public Action RoundStart(Handle event, const char[] name, bool dontBroadcast)
 		
 		CreateTimer(0.5, TimerStripWeapons);
 		
-		char cTempTextHUD[256];
-		Format(cTempTextHUD, sizeof(cTempTextHUD), "%t", "Knife_Start");
-		SendTextToAll(cTempTextHUD);
+		SendMessageToAll("Knife_Start");
 	}
 }
 
@@ -167,9 +165,7 @@ public Action RoundEnd(Handle event, const char[] name, bool dontBroadcast)
 		int iWinningTeam = GetEventInt(event, "winner");
 		if (iWinningTeam != TEAM_CT && iWinningTeam != TEAM_TT)
 		{
-			char cTempTextHUD[256];
-			Format(cTempTextHUD, sizeof(cTempTextHUD), "%t", "Win_None");
-			SendTextToAll(cTempTextHUD);
+			SendMessageToAll("Win_None");
 			
 			RestartLastTime();
 		}
@@ -180,9 +176,7 @@ public Action RoundEnd(Handle event, const char[] name, bool dontBroadcast)
 
 stock void ShowPlayersVoteMenu(int iWinningTeam)
 {
-	char cTempTextHUD[256];
-	Format(cTempTextHUD, sizeof(cTempTextHUD), "%t", "Voting_Start");
-	SendTextToAll(cTempTextHUD);
+	SendMessageToAll("Voting_Start");
 	
 	
 	g_iClientsNumWinners = 0;
@@ -264,17 +258,13 @@ public Action EndVoteMenu(Handle hTimer, Handle hData)
 	
 	if (iWinningTeam != iWantedTeam)
 	{
-		char cTempTextHUD[256];
-		Format(cTempTextHUD, sizeof(cTempTextHUD), "%t", "Winning_Swap");
-		SendTextToAll(cTempTextHUD);
+		SendMessageToAll("Winning_Swap");
 		
 		RestartSwapLastTime();
 	}
 	else
 	{
-		char cTempTextHUD[256];
-		Format(cTempTextHUD, sizeof(cTempTextHUD), "%t", "Winning_Stay");
-		SendTextToAll(cTempTextHUD);
+		SendMessageToAll("Winning_Stay");
 		
 		RestartLastTime();
 	}
@@ -285,7 +275,7 @@ public Action TimerStripWeapons(Handle timer)
 	StripAllPlayersWeapons();
 }
 
-public Action FixHUDmsg(Handle hTimer, Handle hData)
+public Action DisplayDelayedHUD(Handle hTimer, Handle hData)
 {
 	ResetPack(hData);
 	
@@ -413,16 +403,24 @@ stock int GetClientCountInTeams()
 	return iTempSum;
 }
 
-stock void SendTextToAll(char[] text)
+stock void SendMessageToAll(char[] phrase)
 {
-	if (g_iCvarInfo == 1)
-		PrintToChatAll(text);
-	else if (g_iCvarInfo == 2)
+	char text[256];
+	Format(text, sizeof(text), "%t", phrase);
+	
+	switch (g_iCvarInfo)
 	{
-		Handle hData = CreateDataPack();
-		WritePackString(hData, text);
-		
-		CreateTimer(2.0, FixHUDmsg, hData);
+		case 1:
+		{
+			PrintToChatAll(text);
+		}
+		case 2:
+		{
+			Handle hData = CreateDataPack();
+			WritePackString(hData, text);
+			
+			CreateTimer(2.0, DisplayDelayedHUD, hData);
+		}
 	}
 }
 
