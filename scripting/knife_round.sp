@@ -25,7 +25,6 @@ public Plugin myinfo =
 bool g_bKnifeRoundEnded = false;
 
 int g_iRoundNumber = 0;
-int g_iWonTeam = 0;
 
 int g_iClientsNumWinners = 0;
 int g_iClientsWinnersID[64 + 1];
@@ -165,8 +164,8 @@ public Action RoundEnd(Handle event, const char[] name, bool dontBroadcast)
 		g_bKnifeRoundEnded = true;
 		RestoreCvarsAfterKnifeRound();
 		
-		g_iWonTeam = GetEventInt(event, "winner");
-		if (g_iWonTeam != TEAM_CT && g_iWonTeam != TEAM_TT)
+		iWinningTeam = GetEventInt(event, "winner");
+		if (iWinningTeam != TEAM_CT && iWinningTeam != TEAM_TT)
 		{
 			char cTempTextHUD[256];
 			Format(cTempTextHUD, sizeof(cTempTextHUD), "%t", "Win_None");
@@ -175,22 +174,23 @@ public Action RoundEnd(Handle event, const char[] name, bool dontBroadcast)
 			RestartLastTime();
 		}
 		else
-			ShowPlayersVoteMenu();
+			ShowPlayersVoteMenu(iWinningTeam);
 	}
 }
 
-stock void ShowPlayersVoteMenu()
+stock void ShowPlayersVoteMenu(int iWinningTeam)
 {
 	char cTempTextHUD[256];
 	Format(cTempTextHUD, sizeof(cTempTextHUD), "%t", "Voting_Start");
 	SendTextToAll(cTempTextHUD);
+	
 	
 	g_iClientsNumWinners = 0;
 	for (int i = 1; i <= MaxClients; i++)
 	
 		if (IsClientValid(i))
 		
-			if (GetClientTeam(i) == g_iWonTeam)
+			if (GetClientTeam(i) == iWinningTeam)
 			{
 				g_iClientsWinnersID[g_iClientsNumWinners] = i;
 				++g_iClientsNumWinners;
@@ -198,7 +198,11 @@ stock void ShowPlayersVoteMenu()
 				DisplayVoteMenu(i);
 			}
 	
-	CreateTimer(g_fCvarVoteTime, EndVoteMenu);
+	
+	Handle hData = CreateDataPack();
+	WritePackCell(hData, iWinningTeam);
+	
+	CreateTimer(g_fCvarVoteTime, EndVoteMenu, hData);
 }
 
 stock void DisplayVoteMenu(int client)
@@ -230,8 +234,11 @@ public int ShowVotingMenuHandle(Handle hMenu, MenuAction action, int client, int
 	}
 } 
 
-public Action EndVoteMenu(Handle hTimer)
+public Action EndVoteMenu(Handle hTimer, Handle hData)
 {
+	ResetPack(hData);
+	int iWinningTeam = ReadPackCell(hData);
+	
 	int iCTNum = 0;
 	int iTTNum = 0;
 	for (int i = 1; i <= MaxClients; i++)
@@ -244,22 +251,18 @@ public Action EndVoteMenu(Handle hTimer)
 				case TEAM_TT: { ++iTTNum; }
 			}
 	
-	int iWantedTeam = 0;
-	bool bDoSwap = false;
 	
+	int iWantedTeam = 0;
 	if (iCTNum >= iTTNum)
 		iWantedTeam = TEAM_CT;
 	else
 		iWantedTeam = TEAM_TT;
 	
-	g_iWonTeam = g_iWonTeam == TEAM_CT ? TEAM_TT : TEAM_CT;
+	iWinningTeam = iWinningTeam == TEAM_CT ? TEAM_TT : TEAM_CT;
 	
 	
-	if (g_iWonTeam != iWantedTeam)
-		bDoSwap = true;
 	
-	
-	if (bDoSwap)
+	if (iWinningTeam != iWantedTeam)
 	{
 		char cTempTextHUD[256];
 		Format(cTempTextHUD, sizeof(cTempTextHUD), "%t", "Winning_Swap");
