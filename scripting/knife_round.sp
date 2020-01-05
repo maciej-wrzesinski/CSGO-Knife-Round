@@ -131,7 +131,7 @@ public Action RoundStart(Handle event, const char[] name, bool dontBroadcast)
 #endif
 		
 		
-		CreateTimer(0.5, TimerStripWeapons);
+		CreateTimer(0.5, StripAllPlayersWeapons);
 		
 		SendMessageToAll("Knife_Start");
 	}
@@ -178,7 +178,6 @@ stock void ShowPlayersVoteMenu(int iWinningTeam)
 {
 	SendMessageToAll("Voting_Start");
 	
-	
 	g_iClientsNumWinners = 0;
 	for (int i = 1; i <= MaxClients; i++)
 	
@@ -197,22 +196,6 @@ stock void ShowPlayersVoteMenu(int iWinningTeam)
 	WritePackCell(hData, iWinningTeam);
 	
 	CreateTimer(g_fCvarVoteTime, EndVoteMenu, hData);
-}
-
-stock void DisplayVoteMenu(int client)
-{
-	Handle hMenu = CreateMenu(ShowVotingMenuHandle);
-	char cTempBuffer[128];
-	Format(cTempBuffer, sizeof(cTempBuffer), "%t", "Menu_Title");
-	SetMenuTitle(hMenu, cTempBuffer);
-
-	AddMenuItem(hMenu, "CT", "CT");
-	AddMenuItem(hMenu, "TT", "TT");
-
-	SetMenuExitButton(hMenu, false);
-	SetMenuExitBackButton(hMenu, false);
-
-	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
 }
 
 public int ShowVotingMenuHandle(Handle hMenu, MenuAction action, int client, int choose)
@@ -270,9 +253,10 @@ public Action EndVoteMenu(Handle hTimer, Handle hData)
 	}
 }
 
-public Action TimerStripWeapons(Handle timer)
+public Action StripAllPlayersWeapons(Handle timer)
 {
-	StripAllPlayersWeapons();
+	for (int i = 1; i <= MaxClients; i++)
+		StripPlayerWeapons(i);
 }
 
 public Action DisplayDelayedHUD(Handle hTimer, Handle hData)
@@ -288,6 +272,22 @@ public Action DisplayDelayedHUD(Handle hTimer, Handle hData)
 			SetHudTextParams(-1.0, -1.0, 4.0, 255, 255, 255, 200, 0, 0.0, 0.0, 0.0);
 			ShowSyncHudText(i, g_hHUD, cTempText);
 		}
+}
+
+stock void DisplayVoteMenu(int client)
+{
+	Handle hMenu = CreateMenu(ShowVotingMenuHandle);
+	char cTempBuffer[128];
+	Format(cTempBuffer, sizeof(cTempBuffer), "%t", "Menu_Title");
+	SetMenuTitle(hMenu, cTempBuffer);
+
+	AddMenuItem(hMenu, "CT", "CT");
+	AddMenuItem(hMenu, "TT", "TT");
+
+	SetMenuExitButton(hMenu, false);
+	SetMenuExitBackButton(hMenu, false);
+
+	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
 }
 
 stock void RestartRoundForKnifeRound()
@@ -333,12 +333,6 @@ stock void RestartSwapLastTime()
 	ServerCommand("mp_startmoney 800");
 	ServerCommand("mp_unpause_match");
 	ServerCommand("mp_swapteams");
-}
-
-stock void StripAllPlayersWeapons()
-{
-	for (int i = 1; i <= MaxClients; i++)
-		StripPlayerWeapons(i);
 }
 
 stock void StripPlayerWeapons(int client)
