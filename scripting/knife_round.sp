@@ -13,7 +13,7 @@ public Plugin myinfo =
 	name = "Knife Round",
 	author = "Maciej Wrzesinski",
 	description = "Plugin sets up an additional knife round after warmup ends",
-	version = "1.3",
+	version = "1.4",
 	url = "https://github.com/maciej-wrzesinski/"
 };
 
@@ -53,7 +53,7 @@ public void OnPluginStart()
 	cvTime = CreateConVar("knifer_roundtime", "60.0", "How much time should knife round take? (0.5 to 60.0 minutes)", _, true, 0.5, true, 60.0);
 	cvVote = CreateConVar("knifer_votetime", "10.0", "How much time should vote take? (5 to 20 seconds)", _, true, 5.0, true, 20.0);
 	cvAllowAllTalk = CreateConVar("knifer_alltalk", "1", "Should there be alltalk enabled while knife round? (1 - enabled, 0 - disabled)", _, true, 0.0, true, 1.0);
-	cvUnload = CreateConVar("knifer_unload", "kento_rankme,temporary_plugin1,temporary_plugin2", "Unload these plugins while knife round is being played (separate plugins with commas)", _, false, _, false, _);
+	cvUnload = CreateConVar("knifer_unload", "kento_rankme", "Unload these plugins while knife round is being played (separate plugins with commas)", _, false, _, false, _);
 	
 	cvBuyTimeNormal = FindConVar("mp_buytime");
 	cvBuyTimeImmunity = FindConVar("mp_buy_during_immunity");
@@ -132,12 +132,6 @@ public Action RoundStart(Handle event, const char[] name, bool dontBroadcast)
 
 public Action RoundEnd(Handle event, const char[] name, bool dontBroadcast)
 {
-	//debug, to be deleted
-	LogError("--- debug ---");
-	LogError("winner %i", GetEventInt(event, "winner"));
-	LogError("teamid %i", GetEventInt(event, "teamid"));
-	LogError("winnerid %i", GetEventInt(event, "winnerid"));
-	
 	if (KnifeRoundPlayedAlready())
 	{
 		return;
@@ -427,19 +421,15 @@ stock void PluginsOnKnifeRound(char[] command)
 	StripQuotes(plugins);
 	StrCat(plugins, sizeof(plugins), ",");
 	
-	while (StrContains(plugins, ",")) 
+	while (StrContains(plugins, ",") && StrEqual(plugins, "") == false) 
 	{
 		char found_plugin[128];
 		SplitString(plugins, ",", found_plugin, sizeof(found_plugin));
+		TrimString(found_plugin);
 		
 		ServerCommand("sm plugins %s %s", command, found_plugin);
 		
 		ReplaceStringEx(plugins, sizeof(plugins), found_plugin, "");
 		ReplaceStringEx(plugins, sizeof(plugins), ",", "");
-		
-		//debug, to be deleted
-		LogError("--- debug ---");
-		LogError("sm plugins %s %s", command, found_plugin);
-		LogError("plugins string after %s", plugins);
 	}
 }

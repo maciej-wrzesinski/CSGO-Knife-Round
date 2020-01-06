@@ -4,6 +4,14 @@ Simple SourceMod plugin that allows you to play an additional round before a mat
 
 # Changelog
 ```
+1.4
+- Cleaner code (remove comments, remove redundant code, renaming functions and variables, variable encapsulation, removed some global variables)
+- Removed deprecated function IsValidHandle
+- Fixed the voting menu not displaying 100% of times
+- Calculating player votes is simpler
+- Removed #define for kento_rankme blockade
+- Cvar knifer_unload added insted of #define for only kento_rankme
+
 1.3
 - Code cleanup
 - Comments cleanup
@@ -29,10 +37,19 @@ Simple SourceMod plugin that allows you to play an additional round before a mat
 - Plugin release
 ```
 
+
+# Installation
+ - Compile knife_round.sp into knife_round.smx with an up-to-date
+ - sourcemod compiler Put knife_round.smx into addons/sourcemod/plugins/
+ - Put knife_round.phrases.txt into addons/sourcemod/translations/      
+ - Restart the server
+
+
 # Cvars
 ```
 knifer_info 0-2 - Sets the messages display type (0 - no messages, 1 - chat, 2 - HUD)
 knifer_roundtime 0.5-60.0 - Sets how long the knife round will last
 knifer_votetime 5.0-20.0 - Sets how long the vote for team change will last
 knifer_alltalk 0-1 - Sets if there will be alltalk enabled on knife round
+knifer_unload "kento_rankme,rankme" - Unload these plugins while knife round is being played (separate plugins with commas)
 ```
