@@ -39,8 +39,8 @@ Simple SourceMod plugin that allows you to play an additional round before a mat
 
 
 # Installation
- - Compile knife_round.sp into knife_round.smx with an up-to-date
- - sourcemod compiler Put knife_round.smx into addons/sourcemod/plugins/
+ - Compile knife_round.sp into knife_round.smx with an up-to-date sourcemod compiler
+ - Put knife_round.smx into addons/sourcemod/plugins/
  - Put knife_round.phrases.txt into addons/sourcemod/translations/      
  - Restart the server
 
